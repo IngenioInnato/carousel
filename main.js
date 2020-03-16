@@ -131,6 +131,7 @@ class Carousel{
   resetControl(){
     this._control[0].dataset.slideNumber = 0;
     this._control[1].dataset.slideNumber = 2;
+    if(!this._bIndicator) this._slideItem.forEach(elm => elm.style.transform = 'translateX(0)');
     return true;
   }
   actualLocation(){
@@ -270,4 +271,4 @@ class Carousel{
   /* ============ */
 }
 var y = document.querySelector('.carousel');
-var x = new Carousel(y);
+var x = new Carousel(y, true, false);
