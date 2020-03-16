@@ -271,4 +271,4 @@ class Carousel{
   /* ============ */
 }
 var y = document.querySelector('.carousel');
-var x = new Carousel(y, true, false);
+var x = new Carousel(y);
