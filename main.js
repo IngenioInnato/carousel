@@ -1,6 +1,8 @@
 class Carousel{
-  constructor(html, nSlideItem = [1, 2, 3, 4, 5], breakPoint = [0, 576, 768, 992, 1200]){
+  constructor(html, bControl = true, bIndicator = true , nSlideItem = [1, 2, 3, 4, 5], breakPoint = [0, 576, 768, 992, 1200]){
     this._html = html;
+    this._bControl = bControl; // Boolean Control
+    this._bIndicator = bIndicator;
     this._breakPoint = breakPoint;
     this._viewportItem = nSlideItem;
     this._slide = this._html.querySelector('.carousel__slide');
@@ -17,7 +19,7 @@ class Carousel{
     this._width = this.width();
     this._itemPerSlide = this.itemPerSlide();
     this._itemPercent = this.itemPercent();
-    this._nIndicatorDot = this.nIndicatorDot();
+    this._nSlide = this.nSlide();
     // UI FUNCTION
     this.startCarousel();
   }
@@ -44,7 +46,7 @@ class Carousel{
     return percent;
   }
   
-  nIndicatorDot(){ // Indica el número de indicadores que habrá
+  nSlide(){ // Indica el número de indicadores que habrá
     this._itemPerSlide = this.itemPerSlide();
     var nDot = Math.ceil(this._nSlideItem / this._itemPerSlide); // Redondea a número de carousels y resta dos de los controls next y prev
     return nDot;
@@ -69,8 +71,10 @@ class Carousel{
   }
   /* =============================== */
   
-  removeActive(el){ //remueve la clase active
-    if(el.classList.contains('active')) el.classList.remove('active');
+  removeActive(){ //remueve la clase active
+    this.selectIndicatorItem();
+    // De todos los indicator item, si posee la clase activa, remueve esta la clase
+    this._indicatorItem.forEach(el => (el.classList.contains('active')) ? el.classList.remove('active'): '');
     return true;
   }
   
@@ -80,6 +84,7 @@ class Carousel{
     (text === '') ? text = 0 : text = parseInt(text);// condicion que determina si estamos en la posicion 0 u otra
     return text;
   }
+
   /* UI functions */
   setItemSize(){ // Asigna tamaño de items del slide
     this._itemPercent = this.itemPercent();
@@ -90,10 +95,10 @@ class Carousel{
   }
 
   createIndicator(){ // Crear control carousels
-    this._nIndicatorDot = this.nIndicatorDot(); 
+    this._nSlide = this.nSlide(); 
     var ul = document.createElement('ul');
     ul.classList.add(`indicator__container`);
-    for(var i = 1; i <= this._nIndicatorDot; i++){
+    for(var i = 1; i <= this._nSlide; i++){
       const li = document.createElement('li');
       li.classList.add('indicator__item',`indicator__item-${i}`);
       // li.setAttribute('onclick',`indicatorMove(this)`);
@@ -115,7 +120,7 @@ class Carousel{
   resetIndicator() { // Reinicia indicador cuando este cambia de tamaño
     this._indicator = this._html.querySelector('.carousel__indicator');
     this.selectIndicatorHtml();
-    this._indicatorItem.forEach(el => (el.classList.contains('active')) ? this.removeActive(el): '');
+    this.removeActive();
     this._indicatorItem[0].classList.add('active'); // colocar primer idicador activo
     this._control[0].dataset.slideNumber = 0; // actualiza slides
     this._control[1].dataset.slideNumber = 2; // actualiza slides
@@ -123,30 +128,38 @@ class Carousel{
     return true;
   }
 
-  updateControl(){ // actualiza controls cuando indicador es seleccionad0
+  resetControl(){
+    this._control[0].dataset.slideNumber = 0;
+    this._control[1].dataset.slideNumber = 2;
+    return true;
+  }
+  actualLocation(){
     this._itemPerSlide = this.itemPerSlide();
-    var text = this._slideItem[0].style.transform;
-    text = this.remplaceTransformText(text);
-    text = (text / this._itemPerSlide) + 1; // ubicación de item control actualmente
-    this._control[0].dataset.slideNumber = text - 1;
-    this._control[1].dataset.slideNumber = text + 1;
+    var local = this._slideItem[0].style.transform;
+    local = this.remplaceTransformText(local);
+    local = (local / this._itemPerSlide) + 1; // ubicación de item control actualmente
+    return local;
+  }
+
+  updateControl(){ // actualiza controls cuando indicador es seleccionad0
+    var actual = this.actualLocation();
+    this._control[0].dataset.slideNumber = actual - 1;
+    this._control[1].dataset.slideNumber = actual + 1;
     return true;
   }
 
   updateIndicator(){ // actualiza controls cuando indicador es seleccionado
-    this._control = this._slide.querySelectorAll('.carousel__control'); // update controls
-    var before = this._control[0].dataset.slideNumber;
-    this._indicatorItem.forEach(el => this.removeActive(el));
-    this._indicatorItem[before].classList.add('active');
+    var actual = this.actualLocation();
+    this.removeActive();
+    this._indicatorItem[actual - 1].classList.add('active');
     return true;
   }
 
   moveSlide(el){ // Por parametro se pasa elemento con dataset, mueve el slide
     this._itemPerSlide = this.itemPerSlide(); // actualizar
     var nItem = parseInt(el.dataset.slideNumber);
-    this._indicatorItem.forEach(el => {
-      this.removeActive(el);
-    });
+    if(this._bIndicator) this.removeActive(); // Si indicador esta siendo usado remueve clase activo
+    
     var moveSlide = -((nItem - 1) * this._itemPerSlide * 100); // valor a trasladar
     moveSlide = `translateX(${moveSlide}%)`;
     this.slideTranslate(moveSlide);
@@ -155,57 +168,104 @@ class Carousel{
 
   
   indicatorMove(indicatorItem){ // mover slide con indicador
-    this. moveSlide(indicatorItem);
+    this.moveSlide(indicatorItem);
     indicatorItem.classList.add('active');
-    this.updateControl();
+    if(this._bControl) this.updateControl();
     return true;
+  }
+
+  controlBorderCase(){
+    this._itemPerSlide = this.itemPerSlide();
+    this._nSlide = this.nSlide();
+    var caseOne = this._control[0].dataset.slideNumber == 0;
+    var caseTwo = this._control[1].dataset.slideNumber == (this._nSlide + 1);
+    if(caseOne){
+      var transform = -((this._nSlide - 1)* this._itemPerSlide * 100);
+      var transform = `translateX(${transform}%)`
+      console.log(transform)
+      this.slideTranslate(transform);
+      this._control[0].dataset.slideNumber = this._nSlide - 1;
+      this._control[1].dataset.slideNumber = this._nSlide + 1;
+    }
+    else if(caseTwo){
+      var transform = 'translateX(0%)';
+      this.slideTranslate(transform);
+      this._control[0].dataset.slideNumber = 0;
+      this._control[1].dataset.slideNumber = 2;
+    }
+    return true;  
+  }
+
+  controlMove(controlItem, isNext = true){
+    this._nSlide = this.nSlide();
+
+    var dataCero = (controlItem.dataset.slideNumber == '0'); // condiciones
+    var dataMax = (controlItem.dataset.slideNumber == (this._nSlide + 1));
+    
+    if(dataCero || dataMax){
+      this.controlBorderCase();
+    } else {
+      this.moveSlide(controlItem);
+      if(isNext){
+        this._control.forEach(el => {el.dataset.slideNumber =  parseInt(el.dataset.slideNumber) + 1});
+      } else{ 
+        this._control.forEach(el => el.dataset.slideNumber =  parseInt(el.dataset.slideNumber) - 1);
+      }
+    }
+
+    if(this._bIndicator) this.updateIndicator();
   }
 
   indicatorListener(){ // Selecciona items
     this.selectIndicatorHtml();
-    this._indicatorItem.forEach(el => el.addEventListener('click', () => this.indicatorMove(el)));
+    this._indicatorItem.forEach((el, i) => el.addEventListener('click', () => this.indicatorMove(el)));
     return true;
   }
 
   controlListener(){  // Escucha controles
-    this._nIndicatorDot = this.nIndicatorDot();
-    this._control.forEach(el => el.addEventListener('click', () => {
-      if(el.dataset.slideNumber == '0')// Ir al último slide
-        el.dataset.slideNumber = this._nIndicatorDot;
-      else if (el.dataset.slideNumber == this._nIndicatorDot + 1) // ir al primer slide
-        el.dataset.slideNumber = 1;
-      this.indicatorMove(el);
-      this.updateIndicator();
-    }));
+    this._itemPerSlide = this.itemPerSlide();
+    this._nSlide = this.nSlide(); 
+    this._control[0].addEventListener('click', () => this.controlMove(this._control[0], false));
+    this._control[1].addEventListener('click', () => this.controlMove(this._control[1], true));
     return true;
+  }
+  
+  activeListener(){ // Inicia todos los escuchadores
+    if(this._bIndicator) this.indicatorListener();
+    if(this._bControl) this.controlListener();
   }
 
   windowListener(){ // Escucha cambio de pantalla
-    window.addEventListener('resize', () => {
+    window.addEventListener('resize', () => { 
       if(this._itemPerSlide != this.itemPerSlide()){ 
         this.setItemSize(); 
         this._itemPerSlide = this.itemPerSlide();
-        this._indicator.innerHTML = '';
-        this.createIndicator();
-        this.resetIndicator();
-        this.activeListener();
-        this.updateControl();
+
+        if(this._bIndicator) {
+          this._indicator.innerHTML = '';
+          this.createIndicator();
+          this.resetIndicator();
+        } else if(this._bControl) this.resetControl();
+
+        if(this._bIndicator) this.indicatorListener();
       } 
     });
   }
 
-  activeListener(){ // Inicia todos los escuchadores
-    this.indicatorListener();
-    this.controlListener();
-    this.windowListener();
-  }
-
   startCarousel(){ // inicia carrusel
-    this.setItemSize();
-    this.createIndicator();
-    this._indicator = this._html.querySelector('.carousel__indicator');
-    this.selectIndicatorHtml();
-    this.activeListener();
+    if((this._bControl && this._bIndicator) || (!this._bControl && !this._bIndicator)){
+      this.setItemSize(); this.createIndicator();
+      this._indicator = this._html.querySelector('.carousel__indicator');
+      this.selectIndicatorHtml(); this.activeListener();
+    } else if(this._bControl === false){
+      this.setItemSize(); this.createIndicator(); this.selectIndicatorHtml();
+      this.activeListener(); this._control.forEach(el => /*{el.style.display = 'none';*/ el.remove()/*}*/);
+      this.indicatorListener();
+    } else if(this._bIndicator === false){
+      this.setItemSize(); this._indicator.style.display = 'none';
+      this.controlListener();
+    }
+    this.windowListener();
   }
   /* ============ */
 }
