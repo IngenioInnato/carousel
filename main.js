@@ -1,8 +1,9 @@
 class Carousel{
-  constructor(html, bControl = true, bIndicator = true , nSlideItem = [1, 2, 3, 4, 5], breakPoint = [0, 576, 768, 992, 1200]){
+  constructor(html, bControl = true, bIndicator = true , nSlideItem = [1, 2, 3, 4, 5], breakPoint = [0, 576, 768, 992, 1200], bNIndicator = true){
     this._html = html;
     this._bControl = bControl; // Boolean Control
     this._bIndicator = bIndicator;
+    this._bNIndicator = bNIndicator;
     this._breakPoint = breakPoint;
     this._viewportItem = nSlideItem;
     this._slide = this._html.querySelector('.carousel__slide');
@@ -103,7 +104,7 @@ class Carousel{
       li.classList.add('indicator__item',`indicator__item-${i}`);
       // li.setAttribute('onclick',`indicatorMove(this)`);
       li.setAttribute('data-slide-number', i)
-      li.innerHTML = i; 
+      if(this._bNIndicator) li.innerHTML = i; 
       if(i === 1) li.classList.add('active');
       ul.appendChild(li);
     }
@@ -270,5 +271,15 @@ class Carousel{
   }
   /* ============ */
 }
-var y = document.querySelector('.carousel');
-var x = new Carousel(y);
+
+var carouselHTML = document.querySelector('.carousel');
+var boolControl = true; // opcional
+var boolIndicator = true;  // opcional
+var numSlideItem = [1, 2, 3, 4, 5]; // opcional
+var breakPoint = [0, 576, 768, 992, 1200]; // opcional
+var boolNumIndicator = false; // opcional
+
+var carousel = new Carousel(carouselHTML, boolControl, boolIndicator, numSlideItem, breakPoint, boolNumIndicator);
+
+
+// 
